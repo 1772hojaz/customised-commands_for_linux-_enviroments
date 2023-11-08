@@ -1,0 +1,6 @@
+#!/bin/bash
+echo -n "What is common between the files: "
+read -r P
+g='\033[0;32m'
+n='\033[0m'
+chmod u+x *$P;echo -e "${g} successful ${n} "
