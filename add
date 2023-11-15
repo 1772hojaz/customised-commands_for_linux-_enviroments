@@ -4,4 +4,11 @@ echo "Write the commit message: "
 read -r P
 git commit -m "$P"
 
-git pull
+if [ $? -ne 0];
+then
+    echo -e "\031[32m Commit failed \033[0m"
+    exit 1
+else:
+	git push
+	echo -e "\033[32m Pushed to remote \033[0m"
+fi
