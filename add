@@ -4,8 +4,7 @@ echo "Write the commit message: "
 read -r P
 git commit -m "$P"
 
-if [ $? -ne 0];
-then
+if [ $? -ne 0 ]; then
     echo -e "\031[32m Commit failed \033[0m"
     exit 1
 else:
