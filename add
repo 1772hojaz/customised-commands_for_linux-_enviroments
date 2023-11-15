@@ -1,13 +1,14 @@
 #!/bin/zsh
+autoload -U colors && colors
 git add .
 echo "Write the commit message: "
 read -r P
 git commit -m "$P"
 
 if [ $? -ne 0 ]; then
-    echo -e "\031[32m Commit failed \033[0m"
+    echo -e "${fg[red]}Commit failed${reset_color}"
     exit 1
 else:
 	git push
-	echo -e "\033[32m Pushed to remote \033[0m"
+	echo -e "${fg[green]}Pushed to remote${reset_color}"
 fi
