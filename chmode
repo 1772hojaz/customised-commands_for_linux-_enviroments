@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 echo -n "What is common between the files: "
 read -r P
 g='\033[0;32m'
