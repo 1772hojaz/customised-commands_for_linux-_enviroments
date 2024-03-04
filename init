@@ -1,0 +1,22 @@
+#!/bin/bash
+autoload -U colors && colors
+git init 
+
+echo "write your commit message: "
+read -r commit
+
+echo "Put your repo url: "
+
+read -r repo
+
+
+
+git commit -m $commit 
+git remote add origin $repo
+
+if [$? -ne 0];then 
+	echo -e "${fg[red]} COMMIT FAILED ${resert_color}"
+	exit 1
+else 
+	git push -u origin master
+fi

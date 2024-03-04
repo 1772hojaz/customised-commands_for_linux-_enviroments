@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 echo -n "What is common between the files: "
 read -r P
