@@ -1,41 +1,24 @@
 #!/bin/bash
 
-
 red='\033[31m'
 green='\033[0;32m'
 reset_color='\033[0m'
-
 
 git add .
 echo "Write the commit message: "
 read -r P
 
-
-git commit -m "$P"
-
-error=$(git commit -m "$P" 2>&1 >/dev/null)
-if [ $? -ne 0 ]; then
-	while
-		echo "$error" | grep -q "
-*** Please tell me who you are.
-
-Run
-
-  git config --global user.email \"you@example.com\"
-  git config --global user.name \"Your Name\"
-
-to set your account's default identity.
-Omit --global to set the identity only in this repository.
-
-fatal: unable to auto-detect email address (got 'root@2151e432f63e.(none)')"
-		do
-			git config --global user.email "h.nyahoja@alustudent.com"
-			git config --global user.name "Humphrey Nyahoja"
-		done
-	echo -e "${green} Email and name .....updated${reset_color}"
-	echo -e "${red}Commit failed${reset_color}"
-	exit 1
+if git commit -m "$P"; then
+    echo -e "${green}Commit successful. Pushing to remote...${reset_color}"
+    git push
+    echo -e "${green}Pushed to remote${reset_color}"
 else
-	git push
-	echo -e "${green}Pushed to remote${reset_color}"
+    error=$(git commit -m "$P" 2>&1)
+    if echo "$error" | grep -q "Please tell me who you are."; then
+        git config --global user.email "h.nyahoja@alustudent.com"
+        git config --global user.name "Humphrey Nyahoja"
+        echo -e "${green}Email and name updated. Please commit again.${reset_color}"
+    else
+        echo -e "${red}Commit failed due to an unexpected error.${reset_color}"
+    fi
 fi
