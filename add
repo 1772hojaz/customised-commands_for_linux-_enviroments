@@ -15,17 +15,15 @@ git commit -m "$P"
 
 error=$(git commit -m "$P" 2>&1 >/dev/null)
 if [ $? -ne 0 ]; then
-    echo -e "${red}Commit failed${reset_color}"
-    while
-	    echo "$error" | grep -q ")"
-    do
-	    git config --global user.email "h.nyahoja@alustudent.com"
-	    git config --global user.name "Humphrey Nyahoja"
-    done
-    echo -e "${green} Email and name .....updated${reset_color}"
-    exit 1
-    
-
+	while
+		echo "$error" | grep -q ")"
+		do
+			git config --global user.email "h.nyahoja@alustudent.com"
+			git config --global user.name "Humphrey Nyahoja"
+		done
+	echo -e "${green} Email and name .....updated${reset_color}"
+	echo -e "${red}Commit failed${reset_color}"
+	exit 1
 else
 	git push
 	echo -e "${green}Pushed to remote${reset_color}"
