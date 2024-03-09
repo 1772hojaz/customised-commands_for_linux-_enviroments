@@ -1,0 +1,14 @@
+#!/bin/bash
+
+red='\033[31m'
+green='\033[0;32m'
+reset_color='\033[0m'
+
+P=$1
+
+sed -i 's/[[:space:]]*$//' "$P"
+if [ $? -ne 0 ]; then
+    echo -e "${red} REMOVING SPACES FAILED ${reset_color}"
+else
+    echo -e "${green} REMOVING SPACES SUCCESSFUL ${reset_color}"
+fi
