@@ -14,7 +14,7 @@ Here are the steps on how to add your script to PATH:
 Bash
 
 
-#export PATH=$PATH:/path/to/script/directory
+#export PATH=$PATH:/customised-commands_for_linux_enviroments
 
 
 3. Save the .bashrc file.
