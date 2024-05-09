@@ -1,2 +1,31 @@
 #!/bin/bash
-echo "Hello Humphrey Nyahoja"
+
+# Function to print in green color
+print_success() {
+    printf "\e[32m%s\e[0m\n" "$1"
+}
+
+# Function to print in red color
+print_error() {
+    printf "\e[31m%s\e[0m\n" "$1"
+}
+
+# Prompt the user for new Git user email and name
+read -p "Enter your new Git user email: " new_email
+read -p "Enter your new Git user name: " new_name
+
+# Delete existing Git user configuration
+git config --global --unset user.email
+git config --global --unset user.name
+
+# Set new Git user email and name configurations
+git config --global user.email "$new_email"
+git config --global user.name "$new_name"
+
+# Check if setting new configurations was successful
+if [ "$?" -ne 0 ]; then
+    print_error "Failed to set new Git user configurations."
+    exit 1
+fi
+
+print_success "Git user configurations updated successfully."

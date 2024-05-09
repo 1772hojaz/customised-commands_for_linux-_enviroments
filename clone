@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Function to print in green color
+print_success() {
+    printf "\e[32m%s\e[0m\n" "$1"
+}
+
+# Function to print in red color
+print_error() {
+    printf "\e[31m%s\e[0m\n" "$1"
+}
+
+# Prompt the user for GitHub username, token, owner, and repository name
+read -p "Enter your GitHub username: " username
+read -s -p "Enter your GitHub personal access token: " token
+echo
+read -p "Enter the repository owner's username or organization name: " owner
+read -p "Enter the name of the repository you want to clone: " repository
+
+# Clone the repository using the provided token for authentication
+git clone https://${username}:${token}@github.com/${owner}/${repository}.git
+
+# Check if cloning was successful
+if [ "$?" -ne 0 ]; then
+    print_error "Failed to clone repository."
+    exit 1
+fi
+
+print_success "Repository cloned successfully."
+

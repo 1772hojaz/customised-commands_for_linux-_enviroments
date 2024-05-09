@@ -1,0 +1,41 @@
+#!/bin/bash
+
+config=~/hamu/Config-VPNSplit.com-10Gbit/'server13-VPNSplit.com-10Gbit-TCP 110 (USA).ovpn'
+
+start_vpn() {
+    if [ -f "$1" ]; then
+        if pgrep -x "openvpn" > /dev/null; then
+            echo "OpenVPN is already running."
+        else
+            sudo openvpn "$config" &
+            echo "OpenVPN started."
+        fi
+    else
+        echo "OpenVPN configuration file not found: $config"
+        exit 1
+    fi
+}
+
+stop_vpn() {
+    if pgrep -x "openvpn" > /dev/null; then
+        sudo pkill openvpn
+        echo "OpenVPN stopped."
+    else
+        echo "OpenVPN is not running."
+    fi
+}
+
+case "$1" in
+    start)
+        start_vpn
+        ;;
+    stop)
+        stop_vpn
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0

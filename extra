@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Check if the correct number of arguments are provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 compressed_file.zip extracted_folder"
+    exit 1
+fi
+
+compressed="$1"
+extracted="$2"
+
+# Check if the compressed file exists
+if [ ! -f "$compressed" ]; then
+    echo "Error: The specified compressed file does not exist."
+    exit 1
+fi
+
+# Check if the extracted folder exists
+if [ ! -d "$extracted" ]; then
+    echo "Error: The specified extracted folder does not exist."
+    exit 1
+fi
+
+# Extract the ZIP file using unzip
+unzip -q "$compressed" -d "$extracted"
+
+# Check if unzip was successful
+if [ $? -eq 0 ]; then
+    echo "Extraction completed successfully."
+else
+    echo "Error: Failed to extract the ZIP file."
+fi
+
