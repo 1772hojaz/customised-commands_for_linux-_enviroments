@@ -1,0 +1,5 @@
+#!/bin/bash
+echo -e "Enter the word you want to search: "
+read  -r p
+find . -type f -name "*.ts" -exec grep -l "$p" {} +
+
