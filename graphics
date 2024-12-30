@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sudo service gdm3 restart
+
