@@ -1,9 +1,11 @@
 #!/bin/bash
 
+# Define colors for output
 red='\033[31m'
 green='\033[0;32m'
 reset_color='\033[0m'
 
+# Stage all changes
 git add .
 
 # Get lists of added, modified, and deleted files
@@ -11,22 +13,35 @@ added=$(git diff --cached --name-only --diff-filter=A)
 updated=$(git diff --cached --name-only --diff-filter=M)
 deleted=$(git diff --cached --name-only --diff-filter=D)
 
-# Generate the commit message based on detected changes
-P=""
+# Construct the commit message
+commit_message="I"
+if [[ -n "$added" ]]; then
+    commit_message="$commit_message ADDED $(echo "$added" | sed 's/^/#/' | paste -sd ', ')"
+fi
+if [[ -n "$updated" ]]; then
+    commit_message="$commit_message, UPDATED $(echo "$updated" | sed 's/^/#/' | paste -sd ', ')"
+fi
+if [[ -n "$deleted" ]]; then
+    commit_message="$commit_message, and DELETED $(echo "$deleted" | sed 's/^/#/' | paste -sd ', ')"
+fi
 
-[[ ! -z "$added" ]] && P="$P\n\nAdded:\n$(echo "$added" | sed 's/^/- /')"
-[[ ! -z "$updated" ]] && P="$P\n\nUpdated:\n$(echo "$updated" | sed 's/^/- /')"
-[[ ! -z "$deleted" ]] && P="$P\n\nDeleted:\n$(echo "$deleted" | sed 's/^/- /')"
+# Handle case where there are no changes
+if [[ "$commit_message" == "I" ]]; then
+    echo -e "${red}No changes to commit.${reset_color}"
+    exit 1
+fi
 
-echo -e "${green}Auto-generated commit message: $P${reset_color}"
+# Output the auto-generated commit message
+echo -e "${green}Auto-generated commit message: $commit_message${reset_color}"
 
-# Commit with the generated message
-if git commit -m "$(echo -e "$P")"; then
+# Commit changes with the generated message
+if git commit -m "$commit_message"; then
     echo -e "${green}Commit successful. Pushing to remote...${reset_color}"
     git push
     echo -e "${green}Pushed to remote${reset_color}"
 else
-    error=$(git commit -m "$(echo -e "$P")" 2>&1)
+    # Handle specific errors, like missing user info
+    error=$(git commit -m "$commit_message" 2>&1)
     if echo "$error" | grep -q "Please tell me who you are."; then
         git config --global user.email "h.nyahoja@alustudent.com"
         git config --global user.name "Humphrey Nyahoja"
