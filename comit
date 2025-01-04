@@ -5,15 +5,28 @@ green='\033[0;32m'
 reset_color='\033[0m'
 
 git add .
-echo "Write the commit message: "
-read -r P
 
-if git commit -m "$P"; then
+# Get lists of added, modified, and deleted files
+added=$(git diff --cached --name-only --diff-filter=A)
+updated=$(git diff --cached --name-only --diff-filter=M)
+deleted=$(git diff --cached --name-only --diff-filter=D)
+
+# Generate the commit message based on detected changes
+P="File changes detected"
+
+[[ ! -z "$added" ]] && P="$P\n\nAdded:\n$(echo "$added" | sed 's/^/- /')"
+[[ ! -z "$updated" ]] && P="$P\n\nUpdated:\n$(echo "$updated" | sed 's/^/- /')"
+[[ ! -z "$deleted" ]] && P="$P\n\nDeleted:\n$(echo "$deleted" | sed 's/^/- /')"
+
+echo -e "${green}Auto-generated commit message: $P${reset_color}"
+
+# Commit with the generated message
+if git commit -m "$(echo -e "$P")"; then
     echo -e "${green}Commit successful. Pushing to remote...${reset_color}"
     git push
     echo -e "${green}Pushed to remote${reset_color}"
 else
-    error=$(git commit -m "$P" 2>&1)
+    error=$(git commit -m "$(echo -e "$P")" 2>&1)
     if echo "$error" | grep -q "Please tell me who you are."; then
         git config --global user.email "h.nyahoja@alustudent.com"
         git config --global user.name "Humphrey Nyahoja"
@@ -22,3 +35,4 @@ else
         echo -e "${red}Commit failed due to an unexpected error.${reset_color}"
     fi
 fi
+
