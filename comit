@@ -1,0 +1,24 @@
+#!/bin/bash
+
+red='\033[31m'
+green='\033[0;32m'
+reset_color='\033[0m'
+
+git add .
+echo "Write the commit message: "
+read -r P
+
+if git commit -m "$P"; then
+    echo -e "${green}Commit successful. Pushing to remote...${reset_color}"
+    git push
+    echo -e "${green}Pushed to remote${reset_color}"
+else
+    error=$(git commit -m "$P" 2>&1)
+    if echo "$error" | grep -q "Please tell me who you are."; then
+        git config --global user.email "h.nyahoja@alustudent.com"
+        git config --global user.name "Humphrey Nyahoja"
+        echo -e "${green}Email and name updated. Please commit again.${reset_color}"
+    else
+        echo -e "${red}Commit failed due to an unexpected error.${reset_color}"
+    fi
+fi
