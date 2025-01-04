@@ -12,7 +12,7 @@ updated=$(git diff --cached --name-only --diff-filter=M)
 deleted=$(git diff --cached --name-only --diff-filter=D)
 
 # Generate the commit message based on detected changes
-P="File changes detected"
+P=""
 
 [[ ! -z "$added" ]] && P="$P\n\nAdded:\n$(echo "$added" | sed 's/^/- /')"
 [[ ! -z "$updated" ]] && P="$P\n\nUpdated:\n$(echo "$updated" | sed 's/^/- /')"
