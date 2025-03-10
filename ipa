@@ -1,0 +1,5 @@
+#!/bin/bash
+
+curl ifconfig.me
+
+echo " is the ip adress"
