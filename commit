@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+from git import Repo
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
+import subprocess
+
+# Load model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained("narySt/codeT5p_CommitMessageGen")
+model = AutoModelForSeq2SeqLM.from_pretrained("narySt/codeT5p_CommitMessageGen")
+
+def get_git_diff():
+    repo = Repo(".")
+    # Get list of modified files
+    changed_files = [item.a_path for item in repo.index.diff(None)]
+
+    if not changed_files:
+        return None
+
+    diff_data = ""
+    for file in changed_files:
+        try:
+            diff_output = repo.git.diff(file)
+            num_additions = diff_output.count("\n+") - diff_output.count("\n+++")
+            num_deletions = diff_output.count("\n-") - diff_output.count("\n---")
+            total_changes = num_additions + num_deletions
+
+            diff_data += f"""Filename: {file}
+Status: modified
+Additions: {num_additions}
+Deletions: {num_deletions}
+Total changes: {total_changes}
+Code changes:
+{diff_output}
+\n\n"""
+        except Exception as e:
+            print(f"⚠️ Could not process {file}: {e}")
+
+    return diff_data.strip()
+
+def generate_commit_message(diff_text):
+    if not diff_text:
+        return None
+
+    inputs = tokenizer(diff_text, return_tensors="pt", truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = model.generate(**inputs, max_length=20)
+    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+def commit_changes(message):
+    subprocess.run(["git", "add", "."], check=True)
+    subprocess.run(["git", "commit", "-m", message], check=True)
+
+def main():
+    diff = get_git_diff()
+    if not diff:
+        print("✅ No changes to commit.")
+        return
+
+    print("🧠 Generating commit message...")
+    commit_msg = generate_commit_message(diff)
+    if commit_msg:
+        print(f"✅ Commit Message: {commit_msg}")
+        commit_changes(commit_msg)
+    else:
+        print("⚠️ Failed to generate a commit message.")
+
+if __name__ == "__main__":
+    main()
