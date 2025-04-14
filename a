@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Colors
+green='\033[0;32m'
+red='\033[31m'
+reset_color='\033[0m'
+
+# Check if at least one file is passed
+if [ "$#" -eq 0 ]; then
+    echo -e "${red} Please provide at least one file to commit.${reset_color}"
+    exit 1
+fi
+
+# Stage specified files
+git add "$@"
+
+# Generate diff for staged files only
+diff=$(git diff --cached)
+
+# Check if there's anything to commit
+if [[ -z "$diff" ]]; then
+    echo -e "${red} No staged changes found.${reset_color}"
+    exit 1
+fi
+
+# Run AI model to generate commit message (Python inline script)
+commit_message=$(python3 - <<EOF
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
+
+tokenizer = AutoTokenizer.from_pretrained("narySt/codeT5p_CommitMessageGen")
+model = AutoModelForSeq2SeqLM.from_pretrained("narySt/codeT5p_CommitMessageGen")
+
+diff_text = """$diff"""
+input_text = "Generate commit message: " + diff_text
+inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512)
+with torch.no_grad():
+    outputs = model.generate(**inputs, max_length=32)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+EOF
+)
+
+# Output and commit
+echo -e "${green} Commit Message: ${commit_message}${reset_color}"
+if git commit -m "$commit_message"; then
+    echo -e "${green} Commit successful. Pushing...${reset_color}"
+    git push
+else
+    echo -e "${red} Commit failed.${reset_color}"
+fi
+
