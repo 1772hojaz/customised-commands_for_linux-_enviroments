@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 #colors
@@ -70,4 +71,3 @@ else
         echo -e "${red}Commit failed due to an unexpected error.${reset_color}"
     fi
 fi
-

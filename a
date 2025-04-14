@@ -1,51 +1,78 @@
 #!/bin/bash
 
-# Colors
-green='\033[0;32m'
+# Colors for output
 red='\033[31m'
+green='\033[0;32m'
 reset_color='\033[0m'
 
-# Check if at least one file is passed
-if [ "$#" -eq 0 ]; then
-    echo -e "${red} Please provide at least one file to commit.${reset_color}"
-    exit 1
-fi
+# Staging all changes
+git add .
 
-# Stage specified files
-git add "$@"
+# Prepare the diff for the commit (limited to 500 tokens/words)
+diff=$(git diff --cached | head -n 50 | tr -d '\000')  # Limit to first 50 lines
 
-# Generate diff for staged files only
-diff=$(git diff --cached)
-
-# Check if there's anything to commit
+# Handle case where there are no changes
 if [[ -z "$diff" ]]; then
-    echo -e "${red} No staged changes found.${reset_color}"
+    echo -e "${red}No code changes to generate commit message.${reset_color}"
     exit 1
 fi
 
-# Run AI model to generate commit message (Python inline script)
-commit_message=$(python3 - <<EOF
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
+# Pass the diff to the Python script via stdin and read generated message
+commit_message_generated=$(python3 -c "
+import sys
+from transformers import pipeline, AutoTokenizer
 
-tokenizer = AutoTokenizer.from_pretrained("narySt/codeT5p_CommitMessageGen")
-model = AutoModelForSeq2SeqLM.from_pretrained("narySt/codeT5p_CommitMessageGen")
+# Read the diff from stdin
+diff_text = sys.stdin.read()
 
-diff_text = """$diff"""
-input_text = "Generate commit message: " + diff_text
-inputs = tokenizer(input_text, return_tensors="pt", truncation=True, max_length=512)
-with torch.no_grad():
-    outputs = model.generate(**inputs, max_length=32)
-print(tokenizer.decode(outputs[0], skip_special_tokens=True))
-EOF
-)
+# Truncate to model's max capacity (512 tokens)
+tokenizer = AutoTokenizer.from_pretrained('narySt/codeT5p_CommitMessageGen')
+truncated_text = tokenizer.decode(
+    tokenizer.encode(diff_text, truncation=True, max_length=512)[1:-1]
+    
+try:
+    # Use CPU explicitly and disable GPU
+    generator = pipeline(
+        'text2text-generation', 
+        model='narySt/codeT5p_CommitMessageGen',
+        device=-1  # Force CPU
+    )
+    
+    # Generate with adjusted parameters
+    message = generator(
+        truncated_text,
+        max_length=128,
+        num_beams=5,
+        early_stopping=True
+    )[0]['generated_text']
+    
+    print(message.strip())
+except Exception as e:
+    print('Error:', str(e), file=sys.stderr)
+    exit(1)
+" <<< "$diff")
 
-# Output and commit
-echo -e "${green} Commit Message: ${commit_message}${reset_color}"
-if git commit -m "$commit_message"; then
-    echo -e "${green} Commit successful. Pushing...${reset_color}"
-    git push
+# Check result
+if [ $? -ne 0 ] || [[ -z "$commit_message_generated" ]]; then
+    echo -e "${red}Failed to generate commit message. Retrying with file list...${reset_color}"
+    
+    # Fallback to file list method
+    added=$(git diff --cached --name-only --diff-filter=A | paste -sd ', ')
+    modified=$(git diff --cached --name-only --diff-filter=M | paste -sd ', ')
+    deleted=$(git diff --cached --name-only --diff-filter=D | paste -sd ', ')
+    
+    commit_message_generated="Update:"
+    [[ -n "$added" ]] && commit_message_generated+=" Added ${added}"
+    [[ -n "$modified" ]] && commit_message_generated+=" Modified ${modified}"
+    [[ -n "$deleted" ]] && commit_message_generated+=" Deleted ${deleted}"
+fi
+
+# Commit and push
+echo -e "${green}Commit message: $commit_message_generated${reset_color}"
+if git commit -m "$commit_message_generated"; then
+    git push && echo -e "${green}Successfully pushed!${reset_color}"
 else
-    echo -e "${red} Commit failed.${reset_color}"
+    echo -e "${red}Commit failed${reset_color}"
+    exit 1
 fi
 
