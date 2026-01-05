@@ -1,57 +1,53 @@
-
 #!/bin/bash
 
 #colors
-
-
-
-
 red='\033[31m'
 green='\033[0;32m'
+yellow='\033[0;33m'
 reset_color='\033[0m'
 
+# Ask for confirmation before staging changes
+echo -e "${yellow}Do you want to stage all changes with 'git add .'? (yes/no)${reset_color}"
+read -r confirmation
+
+# Convert input to lowercase and check
+confirmation=$(echo "$confirmation" | tr '[:upper:]' '[:lower:]')
+
+if [[ "$confirmation" != "yes" && "$confirmation" != "y" ]]; then
+    echo -e "${red}Operation cancelled. No changes were staged.${reset_color}"
+    exit 0
+fi
+
 # Staging all changes
-
-
+echo -e "${green}Staging all changes...${reset_color}"
 git add .
 
 # Geting the  lists of added, modified, and deleted files
-
-
 added=$(git diff --cached --name-only --diff-filter=A)
 updated=$(git diff --cached --name-only --diff-filter=M)
 deleted=$(git diff --cached --name-only --diff-filter=D)
 
 # Constructing  the commit message
-
-
-
 commit_message="I"
 if [[ -n "$added" ]]; then
     commit_message="$commit_message ADDED $(echo "$added" | sed 's/^/#/' | paste -sd ', ')"
 fi
 
-
 if [[ -n "$updated" ]]; then
     commit_message="$commit_message, UPDATED $(echo "$updated" | sed 's/^/#/' | paste -sd ', ')"
 fi
-
 
 if [[ -n "$deleted" ]]; then
     commit_message="$commit_message, and DELETED $(echo "$deleted" | sed 's/^/#/' | paste -sd ', ')"
 fi
 
-
 # Handle case where there are no changes
-
-
 if [[ "$commit_message" == "I" ]]; then
     echo -e "${red}No changes to commit.${reset_color}"
     exit 1
 fi
 
 # Auto-generated commit message
-
 echo -e "${green}Auto-generated commit message: $commit_message${reset_color}"
 
 if git commit -m "$commit_message"; then
@@ -59,9 +55,7 @@ if git commit -m "$commit_message"; then
     git push
     echo -e "${green}Pushed to remote${reset_color}"
 else
-
     # User Information
-
     error=$(git commit -m "$commit_message" 2>&1)
     if echo "$error" | grep -q "Please tell me who you are."; then
         git config --global user.email "h.nyahoja@alustudent.com"
