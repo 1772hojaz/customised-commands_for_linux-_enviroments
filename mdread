@@ -26,12 +26,27 @@ render_with_external() {
 bold=$(tput bold 2>/dev/null)
 dim=$(tput dim 2>/dev/null)
 reset=$(tput sgr0 2>/dev/null)
-red=$(tput setaf 1 2>/dev/null)
-green=$(tput setaf 2 2>/dev/null)
-yellow=$(tput setaf 3 2>/dev/null)
-blue=$(tput setaf 4 2>/dev/null)
-magenta=$(tput setaf 5 2>/dev/null)
-cyan=$(tput setaf 6 2>/dev/null)
+
+# mdread's own signature palette. Basic 8-color codes (setaf 1-6) get
+# remapped by whatever theme the terminal defines, so mdread's output
+# ends up looking like every other program's. Fixed 256-color codes
+# render the same, so mdread's rendering is recognizable at a glance
+# regardless of terminal theme.
+if [ "$(tput colors 2>/dev/null)" -ge 256 ] 2>/dev/null; then
+    red=$(tput setaf 203 2>/dev/null)
+    green=$(tput setaf 78 2>/dev/null)
+    yellow=$(tput setaf 221 2>/dev/null)
+    blue=$(tput setaf 75 2>/dev/null)
+    magenta=$(tput setaf 170 2>/dev/null)
+    cyan=$(tput setaf 51 2>/dev/null)
+else
+    red=$(tput setaf 1 2>/dev/null)
+    green=$(tput setaf 2 2>/dev/null)
+    yellow=$(tput setaf 3 2>/dev/null)
+    blue=$(tput setaf 4 2>/dev/null)
+    magenta=$(tput setaf 5 2>/dev/null)
+    cyan=$(tput setaf 6 2>/dev/null)
+fi
 
 render_builtin() {
     local file="$1"
