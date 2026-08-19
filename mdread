@@ -1,0 +1,110 @@
+#!/bin/bash
+# Render a markdown file with ANSI styling in the terminal.
+# Usage: mdread file.md [file2.md ...]
+
+if [ "$#" -eq 0 ]; then
+    echo "Usage: $0 file.md [file2.md ...]"
+    exit 1
+fi
+
+# Prefer a real markdown renderer if one is installed, falling back
+# to a built-in formatter when none are available.
+render_with_external() {
+    if command -v glow >/dev/null 2>&1; then
+        glow -p "$1"
+        return 0
+    elif command -v bat >/dev/null 2>&1; then
+        bat --language=markdown --style=plain --paging=always "$1"
+        return 0
+    elif command -v mdcat >/dev/null 2>&1; then
+        mdcat --paginate "$1"
+        return 0
+    fi
+    return 1
+}
+
+bold=$(tput bold 2>/dev/null)
+dim=$(tput dim 2>/dev/null)
+reset=$(tput sgr0 2>/dev/null)
+red=$(tput setaf 1 2>/dev/null)
+green=$(tput setaf 2 2>/dev/null)
+yellow=$(tput setaf 3 2>/dev/null)
+blue=$(tput setaf 4 2>/dev/null)
+magenta=$(tput setaf 5 2>/dev/null)
+cyan=$(tput setaf 6 2>/dev/null)
+
+render_builtin() {
+    local file="$1"
+    local in_code=0
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Fenced code blocks
+        if [[ "$line" =~ ^[[:space:]]*'```' ]]; then
+            if [ "$in_code" -eq 0 ]; then
+                in_code=1
+                echo "${dim}${line}${reset}"
+            else
+                in_code=0
+                echo "${dim}${line}${reset}"
+            fi
+            continue
+        fi
+        if [ "$in_code" -eq 1 ]; then
+            echo "${green}${line}${reset}"
+            continue
+        fi
+
+        # Headers
+        if [[ "$line" =~ ^#{1}[[:space:]] ]]; then
+            echo "${bold}${magenta}${line#\# }${reset}"
+            continue
+        elif [[ "$line" =~ ^#{2}[[:space:]] ]]; then
+            echo "${bold}${blue}${line#\#\# }${reset}"
+            continue
+        elif [[ "$line" =~ ^#{3,}[[:space:]] ]]; then
+            stripped="$(echo "$line" | sed -E 's/^#+[[:space:]]*//')"
+            echo "${bold}${cyan}${stripped}${reset}"
+            continue
+        fi
+
+        # Horizontal rule
+        if [[ "$line" =~ ^-{3,}[[:space:]]*$ || "$line" =~ ^\*{3,}[[:space:]]*$ || "$line" =~ ^_{3,}[[:space:]]*$ ]]; then
+            echo "${dim}────────────────────────────────────────${reset}"
+            continue
+        fi
+
+        # Blockquote
+        if [[ "$line" =~ ^\> ]]; then
+            echo "${yellow}${line}${reset}"
+            continue
+        fi
+
+        # List items
+        if [[ "$line" =~ ^[[:space:]]*([-*+])[[:space:]] ]]; then
+            echo "$line" | sed -E "s/^([[:space:]]*)([-*+])([[:space:]])/\1${cyan}•${reset}\3/"
+            continue
+        fi
+
+        # Inline formatting: bold, italic, inline code, links
+        formatted="$line"
+        formatted=$(echo "$formatted" | sed -E "s/\`([^\`]+)\`/${green}\1${reset}/g")
+        formatted=$(echo "$formatted" | sed -E "s/\*\*([^*]+)\*\*/${bold}\1${reset}/g")
+        formatted=$(echo "$formatted" | sed -E "s/\*([^*]+)\*/${yellow}\1${reset}/g")
+        formatted=$(echo "$formatted" | sed -E "s/\[([^]]+)\]\(([^)]+)\)/${blue}\1${reset} (${dim}\2${reset})/g")
+
+        echo "$formatted"
+    done < "$file"
+}
+
+for file in "$@"; do
+    if [ ! -f "$file" ]; then
+        echo "${red}File not found: $file${reset}" >&2
+        continue
+    fi
+
+    if render_with_external "$file"; then
+        continue
+    fi
+
+    render_builtin "$file" | less -R
+done
